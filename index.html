@@ -5,8 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Syslog Viewer</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen p-8">
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white p-5 rounded-lg flex items-center space-x-3">
+            <svg class="spinner w-8 h-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-gray-700">Loading...</span>
+        </div>
+    </div>
+
     <div class="max-w-7xl mx-auto">
         <div class="bg-white rounded-lg shadow-lg p-6">
             <h1 class="text-2xl font-bold mb-6 text-gray-800">Syslog Viewer</h1>
@@ -16,6 +35,19 @@
                 <select id="routerSelect" class="w-full border border-gray-300 rounded-md p-2">
                     <option value="">Loading routers...</option>
                 </select>
+            </div>
+
+            <!-- Server-side search section -->
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                <div class="flex gap-4">
+                    <input type="text" id="serverSearch" placeholder="Search on server..." class="flex-1 border rounded-md px-3 py-2">
+                    <button id="serverSearchBtn" class="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600">
+                        Search
+                    </button>
+                    <button id="serverSearchResetBtn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
+                        Reset
+                    </button>
+                </div>
             </div>
 
             <div class="flex justify-between items-center mb-6">
@@ -30,7 +62,39 @@
                     <button id="exportAll" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Export All</button>
                     <button id="exportFiltered" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Export Filtered</button>
                 </div>
-                <input type="text" id="search" placeholder="Search..." class="border rounded-md px-3 py-2 w-64">
+                <div class="flex items-center gap-4">
+                    <input type="text" id="search" placeholder="Search..." class="border rounded-md px-3 py-2 w-64">
+                    <button id="toggleAdvanced" class="text-blue-600 hover:text-blue-800">
+                        Advanced Search
+                    </button>
+                </div>
+            </div>
+
+            <!-- Advanced search section -->
+            <div id="advancedSearch" class="mb-6 p-4 bg-gray-50 rounded-lg hidden">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Start Date/Time</label>
+                        <input type="datetime-local" id="startDateTime" class="w-full border rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">End Date/Time</label>
+                        <input type="datetime-local" id="endDateTime" class="w-full border rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">IP Address</label>
+                        <input type="text" id="ipSearch" placeholder="Search IP..." class="w-full border rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">MAC Address</label>
+                        <input type="text" id="macSearch" placeholder="Search MAC..." class="w-full border rounded-md px-3 py-2">
+                    </div>
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button id="applyAdvancedSearch" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                        Apply Filters
+                    </button>
+                </div>
             </div>
 
             <div class="overflow-x-auto">
@@ -71,8 +135,26 @@
         let allLogs = [];
         let filteredLogs = [];
 
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
+        function resetServerSearch() {
+            document.getElementById('serverSearch').value = '';
+            document.getElementById('routerSelect').selectedIndex = 0;
+            allLogs = [];
+            filteredLogs = [];
+            currentPage = 1;
+            renderTable();
+        }
+
         async function loadRouters() {
             try {
+                showLoading();
                 const response = await fetch('http://localhost:3000/routers');
                 const routers = await response.json();
                 
@@ -83,6 +165,8 @@
                 select.addEventListener('change', loadRouterLogs);
             } catch (error) {
                 console.error('Error loading routers:', error);
+            } finally {
+                hideLoading();
             }
         }
 
@@ -125,7 +209,6 @@
             const csvContent = [
                 headers.join(','),
                 ...rows.map(row => row.map(cell => {
-                    // Escape quotes and wrap in quotes if contains comma
                     const escaped = String(cell).replace(/"/g, '""');
                     return cell.includes(',') ? `"${escaped}"` : escaped;
                 }).join(','))
@@ -139,7 +222,7 @@
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             
-            if (navigator.msSaveBlob) { // IE 10+
+            if (navigator.msSaveBlob) {
                 navigator.msSaveBlob(blob, filename);
             } else {
                 link.href = URL.createObjectURL(blob);
@@ -155,6 +238,7 @@
             if (!routerId) return;
 
             try {
+                showLoading();
                 const response = await fetch(`http://localhost:3000/router/${routerId}`);
                 const logs = await response.json();
                 
@@ -175,7 +259,72 @@
                 renderTable();
             } catch (error) {
                 console.error('Error loading logs:', error);
+            } finally {
+                hideLoading();
             }
+        }
+
+        async function performServerSearch() {
+            const routerId = document.getElementById('routerSelect').value;
+            const searchTerm = document.getElementById('serverSearch').value;
+            
+            if (!searchTerm) {
+                alert('Please enter a search term');
+                return;
+            }
+
+            const url = (!routerId) ? `http://localhost:3000/search?query=${searchTerm}` : `http://localhost:3000/router/${routerId}/search?query=${encodeURIComponent(searchTerm)}`;
+            
+            try {
+                showLoading();
+                const response = await fetch(url);
+                const logs = await response.json();
+                
+                allLogs = logs.map(log => {
+                    const parts = parseCSVLine(log.content);
+                    return {
+                        time: parts[0],
+                        user_id: parts[1],
+                        protocol: parts[2],
+                        mac: parts[3],
+                        local_ip: parts[4],
+                        remote_ip: parts[5]
+                    };
+                });
+
+                filteredLogs = [...allLogs];
+                currentPage = 1;
+                renderTable();
+            } catch (error) {
+                console.error('Error performing server search:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function applyAdvancedFilters() {
+            const startDateTime = document.getElementById('startDateTime').value;
+            const endDateTime = document.getElementById('endDateTime').value;
+            const ipSearch = document.getElementById('ipSearch').value.toLowerCase();
+            const macSearch = document.getElementById('macSearch').value.toLowerCase();
+
+            filteredLogs = allLogs.filter(item => {
+                const itemDate = new Date(item.time);
+                
+                if (startDateTime && itemDate < new Date(startDateTime)) return false;
+                if (endDateTime && itemDate > new Date(endDateTime)) return false;
+                
+                if (ipSearch && 
+                    !item.local_ip.toLowerCase().includes(ipSearch) && 
+                    !item.remote_ip.toLowerCase().includes(ipSearch)) return false;
+                
+                if (macSearch && !item.mac.toLowerCase().includes(macSearch)) return false;
+                
+                return true;
+            });
+
+            currentPage = 1;
+            renderTable();
         }
 
         function renderTable() {
@@ -316,6 +465,16 @@
             currentPage = 1;
             renderTable();
         });
+
+        document.getElementById('serverSearchBtn').addEventListener('click', performServerSearch);
+        document.getElementById('serverSearchResetBtn').addEventListener('click', resetServerSearch);
+
+        document.getElementById('toggleAdvanced').addEventListener('click', () => {
+            const advancedSearch = document.getElementById('advancedSearch');
+            advancedSearch.classList.toggle('hidden');
+        });
+
+        document.getElementById('applyAdvancedSearch').addEventListener('click', applyAdvancedFilters);
 
         document.getElementById('exportAll').addEventListener('click', () => {
             if (allLogs.length === 0) {

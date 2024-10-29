@@ -180,9 +180,11 @@ const syslogProcessor = {
         const connection = stringUtils.cut(info.msg, protocol + ', ', ', len');
         const [local_ip, remote_ip] = connection.split('->');
 
+        const gmtPlus6Date = new Date(new Date().getTime() + 6 * 60 * 60 * 1000);
         return {
             // source: info.address,
-            time: timeUtils.formatDate(new Date().toISOString()),
+            // time: timeUtils.formatDate(new Date().toISOString()),
+            time: timeUtils.formatDate(gmtPlus6Date.toISOString()),
             user_id,
             protocol,
             mac: stringUtils.cut(info.msg, 'src-mac ', ', '),
