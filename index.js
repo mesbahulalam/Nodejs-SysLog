@@ -315,14 +315,17 @@ const setupExpress = () => {
             }
 
             // Sort files by modification time to get the latest file
-            // const latestFile = routerFiles.sort((a, b) => fs.statSync(b.path).mtime - fs.statSync(a.path).mtime)[0];
-            const latestFile = (await Promise.all(routerFiles.map(async file => ({
-                ...file,
-                mtime: (await fs.stat(file.path)).mtime
-            })))).sort((a, b) => b.mtime - a.mtime)[0];
+            // const latestFile = routerFiles.sort((a, b) => fs.statSync(b.path).mtime - fs.statSync(a.path).mtime)[0]; // Sync version
+            // const latestFile = (await Promise.all(routerFiles.map(async file => ({
+            //     ...file,
+            //     mtime: (await fs.stat(file.path)).mtime
+            // })))).sort((a, b) => b.mtime - a.mtime)[0];
 
-            const logLines = await fileUtils.readLogFile(latestFile);
-            const result = logLines.flat();
+            // const logLines = await fileUtils.readLogFile(latestFile);
+            // const result = logLines.flat();
+
+            const allLogLines = await Promise.all(routerFiles.map(file => fileUtils.readLogFile(file)));
+            const result = allLogLines.flat();
 
             res.send(result);
         } catch (error) {
