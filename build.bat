@@ -1,0 +1,1 @@
+pkg -t node12-win-x64 .
