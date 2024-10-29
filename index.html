@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Syslog Viewer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" referrerpolicy="no-referrer" />
     <style>
         @keyframes spin {
             to { transform: rotate(360deg); }
@@ -146,6 +147,11 @@
         function resetServerSearch() {
             document.getElementById('serverSearch').value = '';
             document.getElementById('routerSelect').selectedIndex = 0;
+            document.getElementById('search').value = '';
+            document.getElementById('startDateTime').value = '';
+            document.getElementById('endDateTime').value = '';
+            document.getElementById('ipSearch').value = '';
+            document.getElementById('macSearch').value = '';
             allLogs = [];
             filteredLogs = [];
             currentPage = 1;
