@@ -3,6 +3,8 @@ const cors = require('cors');
 const fs = require('fs').promises;
 const path = require('path');
 const Syslogd = require('syslogd');
+const fetch = require('node-fetch');
+const { machineIdSync } = require('machine-uuid');
 
 // Constants
 const CONFIG = {
@@ -178,7 +180,10 @@ const syslogProcessor = {
 
         const protocol = stringUtils.cut(info.msg, 'proto ', ', ');
         const connection = stringUtils.cut(info.msg, protocol + ', ', ', len');
-        const [local_ip, remote_ip] = connection.split('->');
+        // const [local_ip, remote_ip] = connection.split('->');
+        const { ip: local_ip, port: local_port } = this.ip_port_to_ip_and_port(connection.split('->')[0]);
+        const { ip: remote_ip, port: remote_port } = this.ip_port_to_ip_and_port(connection.split('->')[1]);
+        
 
         const gmtPlus6Date = new Date(new Date().getTime() + 6 * 60 * 60 * 1000);
         return {
@@ -189,13 +194,20 @@ const syslogProcessor = {
             protocol,
             mac: stringUtils.cut(info.msg, 'src-mac ', ', '),
             local_ip,
-            remote_ip
+            local_port,
+            remote_ip,
+            remote_port
         };
     },
 
     formatLogLine(data) {
         // return `${data.source},${data.time},${data.user_id},"${data.protocol}",${data.mac},${data.local_ip},${data.remote_ip}\n`;
-        return `${data.time},${data.user_id},"${data.protocol}",${data.mac},${data.local_ip},${data.remote_ip}\n`;
+        return `${data.time},${data.user_id},"${data.protocol}",${data.mac},${data.local_ip},${data.local_port},${data.remote_ip},${data.remote_port}\n`;
+    },
+
+    ip_port_to_ip_and_port(ip_port) {
+        const [ip, port] = ip_port.split(':');
+        return { ip, port };
     }
 };
 
@@ -375,6 +387,8 @@ const setupSyslog = () => {
 
 // Initialize application
 const init = async () => {
+    
+    // await license();
     // Ensure base log directory exists
     await fileUtils.ensureDirectoryExists(CONFIG.LOG_BASE_DIR);
     
@@ -382,6 +396,28 @@ const init = async () => {
     setupSyslog();
     consoleManager.startConsoleUpdates();
 };
+
+const license = async () => {
+    try {
+        const response = await fetch('https://license-server.example.com/validate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ machineId })
+        });
+
+        const licenseInfo = await response.json();
+        if (licenseInfo.status !== 'ok') {
+            console.error('License validation failed:', licenseInfo.message);
+            process.exit(1);
+        }
+    } catch (error) {
+        console.error('Error contacting license server:', error);
+        process.exit(1);
+    }
+};
+
 
 // Start the application
 init().catch(err => {

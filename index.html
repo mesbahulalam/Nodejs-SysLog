@@ -107,7 +107,9 @@
                             <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="protocol">Protocol</th>
                             <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="mac">MAC</th>
                             <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="local_ip">Local IP</th>
+                            <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="local_port">Port</th>
                             <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="remote_ip">Remote IP</th>
+                            <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="remote_port">Port</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
@@ -202,14 +204,16 @@
         }
 
         function convertToCSV(data) {
-            const headers = ['Time', 'User ID', 'Protocol', 'MAC', 'Local IP', 'Remote IP'];
+            const headers = ['Time', 'User ID', 'Protocol', 'MAC', 'Local IP', 'Port', 'Remote IP', 'Port'];
             const rows = data.map(item => [
                 new Date(item.time).toLocaleString(),
                 item.user_id,
                 item.protocol,
                 item.mac,
                 item.local_ip,
-                item.remote_ip
+                item.local_port,
+                item.remote_ip,
+                item.remote_port
             ]);
             
             const csvContent = [
@@ -256,7 +260,9 @@
                         protocol: parts[2],
                         mac: parts[3],
                         local_ip: parts[4],
-                        remote_ip: parts[5]
+                        local_port: parts[5],
+                        remote_ip: parts[6],
+                        remote_port: parts[7]
                     };
                 });
 
@@ -294,7 +300,9 @@
                         protocol: parts[2],
                         mac: parts[3],
                         local_ip: parts[4],
-                        remote_ip: parts[5]
+                        local_port: parts[5],
+                        remote_ip: parts[6],
+                        remote_port: parts[7]
                     };
                 });
 
@@ -352,7 +360,9 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.protocol}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.mac}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.local_ip}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.local_port}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.remote_ip}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.remote_port}</td>
                 </tr>
             `).join('');
 
