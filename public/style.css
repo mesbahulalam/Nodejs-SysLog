@@ -1,0 +1,31 @@
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+.spinner {
+    animation: spin 1s linear infinite;
+}
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: white;
+    min-width: 160px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1;
+    border-radius: 0.375rem;
+}
+.dropdown-content button {
+    width: 100%;
+    text-align: left;
+    padding: 8px 16px;
+}
+.dropdown-content button:hover {
+    background-color: #f3f4f6;
+}
+.show {
+    display: block;
+}
