@@ -6,12 +6,41 @@
     <title>Syslog Viewer</title>
     <!-- <script src="https://cdn.tailwindcss.com"></script> -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" referrerpolicy="no-referrer" />
+    <!-- Add XLSX library for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <!-- Add jsPDF library for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <style>
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
         .spinner {
             animation: spin 1s linear infinite;
+        }
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 160px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 0.375rem;
+        }
+        .dropdown-content button {
+            width: 100%;
+            text-align: left;
+            padding: 8px 16px;
+        }
+        .dropdown-content button:hover {
+            background-color: #f3f4f6;
+        }
+        .show {
+            display: block;
         }
     </style>
 </head>
@@ -31,6 +60,7 @@
         <div class="bg-white rounded-lg shadow-lg p-6">
             <h1 class="text-2xl font-bold mb-6 text-gray-800">Syslog Viewer</h1>
             
+            <!-- Router Selection -->
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Select Router</label>
                 <select id="routerSelect" class="w-full border border-gray-300 rounded-md p-2">
@@ -60,8 +90,24 @@
                         <option value="50">50 per page</option>
                         <option value="1000">1000 per page</option>
                     </select>
-                    <button id="exportAll" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Export All</button>
-                    <button id="exportFiltered" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Export Filtered</button>
+                    <div class="flex space-x-2">
+                        <div class="dropdown">
+                            <button id="exportAllBtn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Export All</button>
+                            <div id="exportAllDropdown" class="dropdown-content">
+                                <button id="exportAll" class="hover:bg-gray-100">CSV</button>
+                                <button id="exportAllExcel" class="hover:bg-gray-100">Excel</button>
+                                <button id="exportAllPDF" class="hover:bg-gray-100">PDF</button>
+                            </div>
+                        </div>
+                        <div class="dropdown">
+                            <button id="exportFilteredBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Export Filtered</button>
+                            <div id="exportFilteredDropdown" class="dropdown-content">
+                                <button id="exportFiltered" class="hover:bg-gray-100">CSV</button>
+                                <button id="exportFilteredExcel" class="hover:bg-gray-100">Excel</button>
+                                <button id="exportFilteredPDF" class="hover:bg-gray-100">PDF</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="flex items-center gap-4">
                     <input type="text" id="search" placeholder="Search..." class="border rounded-md px-3 py-2 w-64">
@@ -83,12 +129,32 @@
                         <input type="datetime-local" id="endDateTime" class="w-full border rounded-md px-3 py-2">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">IP Address</label>
-                        <input type="text" id="ipSearch" placeholder="Search IP..." class="w-full border rounded-md px-3 py-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+                        <input type="text" id="userIdSearch" placeholder="Search User ID..." class="w-full border rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Protocol</label>
+                        <input type="text" id="protocolSearch" placeholder="Search Protocol..." class="w-full border rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Local IP Address</label>
+                        <input type="text" id="localipSearch" placeholder="Search IP..." class="w-full border rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Remote IP Address</label>
+                        <input type="text" id="remoteipSearch" placeholder="Search IP..." class="w-full border rounded-md px-3 py-2">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">MAC Address</label>
                         <input type="text" id="macSearch" placeholder="Search MAC..." class="w-full border rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Local Port</label>
+                        <input type="text" id="localPortSearch" placeholder="Search Local Port..." class="w-full border rounded-md px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Remote Port</label>
+                        <input type="text" id="remotePortSearch" placeholder="Search Remote Port..." class="w-full border rounded-md px-3 py-2">
                     </div>
                 </div>
                 <div class="mt-4 flex justify-end">
@@ -130,7 +196,9 @@
         </div>
     </div>
 
+    
     <script>
+        window.jsPDF = window.jspdf.jsPDF;
         let currentPage = 1;
         let itemsPerPage = 25;
         let sortField = 'time';
@@ -243,6 +311,59 @@
             }
         }
 
+        function downloadExcel(data, filename) {
+            const headers = ['Time', 'User ID', 'Protocol', 'MAC', 'Local IP', 'Port', 'Remote IP', 'Port'];
+            const rows = data.map(item => [
+                new Date(item.time).toLocaleString(),
+                item.user_id,
+                item.protocol,
+                item.mac,
+                item.local_ip,
+                item.local_port,
+                item.remote_ip,
+                item.remote_port
+            ]);
+
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Syslog Data");
+            XLSX.writeFile(wb, filename);
+        }
+
+        function downloadPDF(data, filename) {
+            const doc = new jsPDF();
+            const headers = [['Time', 'User ID', 'Protocol', 'MAC', 'Local IP', 'Port', 'Remote IP', 'Port']];
+            const rows = data.map(item => [
+                new Date(item.time).toLocaleString(),
+                item.user_id,
+                item.protocol,
+                item.mac,
+                item.local_ip,
+                item.local_port,
+                item.remote_ip,
+                item.remote_port
+            ]);
+
+            doc.autoTable({
+                head: headers,
+                body: rows,
+                margin: { top: 20 },
+                styles: { overflow: 'linebreak' },
+                columnStyles: {
+                    0: { cellWidth: 40 },
+                    1: { cellWidth: 20 },
+                    2: { cellWidth: 20 },
+                    3: { cellWidth: 25 },
+                    4: { cellWidth: 20 },
+                    5: { cellWidth: 15 },
+                    6: { cellWidth: 20 },
+                    7: { cellWidth: 15 }
+                }
+            });
+
+            doc.save(filename);
+        }
+
         async function loadRouterLogs() {
             const routerId = document.getElementById('routerSelect').value;
             if (!routerId) return;
@@ -316,11 +437,18 @@
             }
         }
 
+
         function applyAdvancedFilters() {
             const startDateTime = document.getElementById('startDateTime').value;
             const endDateTime = document.getElementById('endDateTime').value;
+            const userIdSearch = document.getElementById('userIdSearch').value.toLowerCase();
+            const protocolSearch = document.getElementById('protocolSearch').value.toLowerCase();
             const ipSearch = document.getElementById('ipSearch').value.toLowerCase();
+            const localipSearch = document.getElementById('localipSearch').value.toLowerCase();
+            const remoteipSearch = document.getElementById('remoteipSearch').value.toLowerCase();
             const macSearch = document.getElementById('macSearch').value.toLowerCase();
+            const localPortSearch = document.getElementById('localPortSearch').value.toLowerCase();
+            const remotePortSearch = document.getElementById('remotePortSearch').value.toLowerCase();
 
             filteredLogs = allLogs.filter(item => {
                 const itemDate = new Date(item.time);
@@ -328,11 +456,13 @@
                 if (startDateTime && itemDate < new Date(startDateTime)) return false;
                 if (endDateTime && itemDate > new Date(endDateTime)) return false;
                 
-                if (ipSearch && 
-                    !item.local_ip.toLowerCase().includes(ipSearch) && 
-                    !item.remote_ip.toLowerCase().includes(ipSearch)) return false;
-                
+                if (userIdSearch && !item.user_id.toLowerCase().includes(userIdSearch)) return false;
+                if (protocolSearch && !item.protocol.toLowerCase().includes(protocolSearch)) return false;
+                if (localipSearch && !item.local_ip.toLowerCase().includes(localipSearch)) return false;
+                if (remoteipSearch && !item.remote_ip.toLowerCase().includes(remoteipSearch)) return false;
                 if (macSearch && !item.mac.toLowerCase().includes(macSearch)) return false;
+                if (localPortSearch && !item.local_port.toString().includes(localPortSearch)) return false;
+                if (remotePortSearch && !item.remote_port.toString().includes(remotePortSearch)) return false;
                 
                 return true;
             });
@@ -492,6 +622,31 @@
 
         document.getElementById('applyAdvancedSearch').addEventListener('click', applyAdvancedFilters);
 
+        // Add dropdown functionality
+        document.getElementById('exportAllBtn').addEventListener('click', function() {
+            document.getElementById('exportAllDropdown').classList.toggle('show');
+            document.getElementById('exportFilteredDropdown').classList.remove('show');
+        });
+
+        document.getElementById('exportFilteredBtn').addEventListener('click', function() {
+            document.getElementById('exportFilteredDropdown').classList.toggle('show');
+            document.getElementById('exportAllDropdown').classList.remove('show');
+        });
+
+        // Close dropdowns when clicking outside
+        window.addEventListener('click', function(event) {
+            if (!event.target.matches('#exportAllBtn') && !event.target.matches('#exportFilteredBtn')) {
+                var dropdowns = document.getElementsByClassName('dropdown-content');
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        });
+
+        // Export event listeners
         document.getElementById('exportAll').addEventListener('click', () => {
             if (allLogs.length === 0) {
                 alert('Please select a router first');
@@ -510,6 +665,46 @@
             const routerId = document.getElementById('routerSelect').value;
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             downloadCSV(filteredLogs, `syslog-${routerId}-filtered-${timestamp}.csv`);
+        });
+
+        document.getElementById('exportAllExcel').addEventListener('click', () => {
+            if (allLogs.length === 0) {
+                alert('Please select a router first');
+                return;
+            }
+            const routerId = document.getElementById('routerSelect').value;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            downloadExcel(allLogs, `syslog-${routerId}-all-${timestamp}.xlsx`);
+        });
+
+        document.getElementById('exportFilteredExcel').addEventListener('click', () => {
+            if (filteredLogs.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            const routerId = document.getElementById('routerSelect').value;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            downloadExcel(filteredLogs, `syslog-${routerId}-filtered-${timestamp}.xlsx`);
+        });
+
+        document.getElementById('exportAllPDF').addEventListener('click', () => {
+            if (allLogs.length === 0) {
+                alert('Please select a router first');
+                return;
+            }
+            const routerId = document.getElementById('routerSelect').value;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            downloadPDF(allLogs, `syslog-${routerId}-all-${timestamp}.pdf`);
+        });
+
+        document.getElementById('exportFilteredPDF').addEventListener('click', () => {
+            if (filteredLogs.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            const routerId = document.getElementById('routerSelect').value;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            downloadPDF(filteredLogs, `syslog-${routerId}-filtered-${timestamp}.pdf`);
         });
 
         document.querySelectorAll('.sort-header').forEach(header => {
