@@ -19,10 +19,6 @@ function resetServerSearch() {
     document.getElementById('serverSearch').value = '';
     document.getElementById('routerSelect').selectedIndex = 0;
     document.getElementById('search').value = '';
-    document.getElementById('startDateTime').value = '';
-    document.getElementById('endDateTime').value = '';
-    document.getElementById('ipSearch').value = '';
-    document.getElementById('macSearch').value = '';
     allLogs = [];
     filteredLogs = [];
     currentPage = 1;
@@ -73,16 +69,19 @@ function parseCSVLine(line) {
 }
 
 function convertToCSV(data) {
-    const headers = ['Time', 'User ID', 'Protocol', 'MAC', 'Local IP', 'Port', 'Remote IP', 'Port'];
+    const headers = ['Time', 'Router IP', 'User ID', 'Protocol', 'MAC', 'Local IP', 'Port', 'Remote IP', 'Port', 'NAT IP', 'Port'];
     const rows = data.map(item => [
         new Date(item.time).toLocaleString(),
         item.user_id,
+        item.router_ip,
         item.protocol,
         item.mac,
         item.local_ip,
         item.local_port,
         item.remote_ip,
-        item.remote_port
+        item.remote_port,
+        item.nat_ip,
+        item.nat_port
     ]);
     
     const csvContent = [
@@ -113,16 +112,19 @@ function downloadCSV(data, filename) {
 }
 
 function downloadExcel(data, filename) {
-    const headers = ['Time', 'User ID', 'Protocol', 'MAC', 'Local IP', 'Port', 'Remote IP', 'Port'];
+    const headers = ['Time', 'Router IP', 'User ID', 'Protocol', 'MAC', 'Local IP', 'Port', 'Remote IP', 'Port', 'NAT IP', 'NAT Port'];
     const rows = data.map(item => [
         new Date(item.time).toLocaleString(),
         item.user_id,
+        item.router_ip,
         item.protocol,
         item.mac,
         item.local_ip,
         item.local_port,
         item.remote_ip,
-        item.remote_port
+        item.remote_port,
+        item.nat_ip,
+        item.nat_port
     ]);
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
@@ -133,16 +135,19 @@ function downloadExcel(data, filename) {
 
 function downloadPDF(data, filename) {
     const doc = new jsPDF();
-    const headers = [['Time', 'User ID', 'Protocol', 'MAC', 'Local IP', 'Port', 'Remote IP', 'Port']];
+    const headers = [['Time', 'Router IP', 'User ID', 'Protocol', 'MAC', 'Local IP', 'Port', 'Remote IP', 'Port', 'NAT IP', 'NAT Port']];
     const rows = data.map(item => [
         new Date(item.time).toLocaleString(),
         item.user_id,
+        item.router_ip,
         item.protocol,
         item.mac,
         item.local_ip,
         item.local_port,
         item.remote_ip,
-        item.remote_port
+        item.remote_port,
+        item.nat_ip,
+        item.nat_port
     ]);
 
     doc.autoTable({
@@ -154,11 +159,14 @@ function downloadPDF(data, filename) {
             0: { cellWidth: 40 },
             1: { cellWidth: 20 },
             2: { cellWidth: 20 },
-            3: { cellWidth: 25 },
-            4: { cellWidth: 20 },
-            5: { cellWidth: 15 },
-            6: { cellWidth: 20 },
-            7: { cellWidth: 15 }
+            3: { cellWidth: 20 },
+            4: { cellWidth: 25 },
+            5: { cellWidth: 20 },
+            6: { cellWidth: 15 },
+            7: { cellWidth: 20 },
+            8: { cellWidth: 15 },
+            9: { cellWidth: 20 },
+            10: { cellWidth: 15 }
         }
     });
 
@@ -178,13 +186,16 @@ async function loadRouterLogs() {
             const parts = parseCSVLine(log.content);
             return {
                 time: parts[0],
-                user_id: parts[1],
-                protocol: parts[2],
-                mac: parts[3],
-                local_ip: parts[4],
-                local_port: parts[5],
-                remote_ip: parts[6],
-                remote_port: parts[7]
+                router_ip: parts[1],
+                user_id: parts[2],
+                protocol: parts[3],
+                mac: parts[4],
+                local_ip: parts[5],
+                local_port: parts[6],
+                remote_ip: parts[7],
+                remote_port: parts[8],
+                nat_ip: parts[9],
+                nat_port: parts[10]
             };
         });
 
@@ -218,13 +229,16 @@ async function performServerSearch() {
             const parts = parseCSVLine(log.content);
             return {
                 time: parts[0],
-                user_id: parts[1],
-                protocol: parts[2],
-                mac: parts[3],
-                local_ip: parts[4],
-                local_port: parts[5],
-                remote_ip: parts[6],
-                remote_port: parts[7]
+                router_ip: parts[1],
+                user_id: parts[2],
+                protocol: parts[3],
+                mac: parts[4],
+                local_ip: parts[5],
+                local_port: parts[6],
+                remote_ip: parts[7],
+                remote_port: parts[8],
+                nat_ip: parts[9],
+                nat_port: parts[10]
             };
         });
 
@@ -236,40 +250,6 @@ async function performServerSearch() {
     } finally {
         hideLoading();
     }
-}
-
-
-function applyAdvancedFilters() {
-    const startDateTime = document.getElementById('startDateTime').value;
-    const endDateTime = document.getElementById('endDateTime').value;
-    const userIdSearch = document.getElementById('userIdSearch').value.toLowerCase();
-    const protocolSearch = document.getElementById('protocolSearch').value.toLowerCase();
-    const ipSearch = document.getElementById('ipSearch').value.toLowerCase();
-    const localipSearch = document.getElementById('localipSearch').value.toLowerCase();
-    const remoteipSearch = document.getElementById('remoteipSearch').value.toLowerCase();
-    const macSearch = document.getElementById('macSearch').value.toLowerCase();
-    const localPortSearch = document.getElementById('localPortSearch').value.toLowerCase();
-    const remotePortSearch = document.getElementById('remotePortSearch').value.toLowerCase();
-
-    filteredLogs = allLogs.filter(item => {
-        const itemDate = new Date(item.time);
-        
-        if (startDateTime && itemDate < new Date(startDateTime)) return false;
-        if (endDateTime && itemDate > new Date(endDateTime)) return false;
-        
-        if (userIdSearch && !item.user_id.toLowerCase().includes(userIdSearch)) return false;
-        if (protocolSearch && !item.protocol.toLowerCase().includes(protocolSearch)) return false;
-        if (localipSearch && !item.local_ip.toLowerCase().includes(localipSearch)) return false;
-        if (remoteipSearch && !item.remote_ip.toLowerCase().includes(remoteipSearch)) return false;
-        if (macSearch && !item.mac.toLowerCase().includes(macSearch)) return false;
-        if (localPortSearch && !item.local_port.toString().includes(localPortSearch)) return false;
-        if (remotePortSearch && !item.remote_port.toString().includes(remotePortSearch)) return false;
-        
-        return true;
-    });
-
-    currentPage = 1;
-    renderTable();
 }
 
 function renderTable() {
@@ -287,6 +267,7 @@ function renderTable() {
     document.getElementById('tableBody').innerHTML = pageData.map(item => `
         <tr class="hover:bg-gray-50">
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(item.time).toLocaleString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.router_ip}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.user_id}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.protocol}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.mac}</td>
@@ -294,6 +275,8 @@ function renderTable() {
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.local_port}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.remote_ip}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.remote_port}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.nat_ip}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.nat_port}</td>
         </tr>
     `).join('');
 
@@ -415,13 +398,6 @@ document.getElementById('search').addEventListener('input', (e) => {
 
 document.getElementById('serverSearchBtn').addEventListener('click', performServerSearch);
 document.getElementById('serverSearchResetBtn').addEventListener('click', resetServerSearch);
-
-document.getElementById('toggleAdvanced').addEventListener('click', () => {
-    const advancedSearch = document.getElementById('advancedSearch');
-    advancedSearch.classList.toggle('hidden');
-});
-
-document.getElementById('applyAdvancedSearch').addEventListener('click', applyAdvancedFilters);
 
 // Add dropdown functionality
 document.getElementById('exportAllBtn').addEventListener('click', function() {

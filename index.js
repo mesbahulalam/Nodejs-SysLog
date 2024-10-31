@@ -4,7 +4,6 @@ const fs = require('fs').promises;
 const path = require('path');
 const Syslogd = require('syslogd');
 const fetch = require('node-fetch');
-const { machineIdSync } = require('machine-uuid');
 
 // Constants
 const CONFIG = {
@@ -184,19 +183,25 @@ const syslogProcessor = {
         const { ip: local_ip, port: local_port } = this.ip_port_to_ip_and_port(connection.split('->')[0]);
         const { ip: remote_ip, port: remote_port } = this.ip_port_to_ip_and_port(connection.split('->')[1]);
         
+        // NAT (10.6.207.75:39408->10.50.50.2:39408)->157.240.1.35:443
+        const nat = stringUtils.cut(info.msg, 'NAT (', ')');
+        const { nat_ip, nat_port } = this.ip_port_to_ip_and_port(nat.split('->')[1]);
 
         const gmtPlus6Date = new Date(new Date().getTime() + 6 * 60 * 60 * 1000);
         return {
             // source: info.address,
             // time: timeUtils.formatDate(new Date().toISOString()),
             time: timeUtils.formatDate(gmtPlus6Date.toISOString()),
+            router_ip: info.address,
             user_id,
             protocol,
             mac: stringUtils.cut(info.msg, 'src-mac ', ', '),
             local_ip,
             local_port,
             remote_ip,
-            remote_port
+            remote_port,
+            nat_ip,
+            nat_port
         };
     },
 
@@ -397,23 +402,15 @@ const init = async () => {
     consoleManager.startConsoleUpdates();
 };
 
+// license
 const license = async () => {
-    try {
-        const response = await fetch('https://license-server.example.com/validate', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ machineId })
-        });
-
-        const licenseInfo = await response.json();
-        if (licenseInfo.status !== 'ok') {
-            console.error('License validation failed:', licenseInfo.message);
-            process.exit(1);
-        }
-    } catch (error) {
-        console.error('Error contacting license server:', error);
+    const response = await fetch('http://localhost:3000/license');
+    const data = await response.json();
+    if(data.status === 'active') {
+        console.log('License active');
+        return;
+    }else{
+        console.log('License expired');
         process.exit(1);
     }
 };
