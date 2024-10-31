@@ -4,6 +4,7 @@ const path = require('path');
 const CONFIG = require('./config');
 const fileUtils = require('./fileUtils');
 const state = require('./state');
+const nodeDiskInfo = require('node-disk-info');
 
 const setupExpress = () => {
     const app = express();
@@ -15,6 +16,39 @@ const setupExpress = () => {
     // Home route
     app.get('/', (req, res) => {
         res.sendFile(path.join(__dirname, '..', 'index.html'));
+    });
+
+    // Get system summary
+    app.get('/summary', async (req, res) => {
+        try {
+            // Get disk info
+            const disks = await nodeDiskInfo.getDiskInfo();
+            const systemDisk = disks.find(disk => disk.mounted === 'C:') || disks[0];
+            
+            // Get router and log counts
+            const logFiles = await fileUtils.getLogFiles(CONFIG.LOG_BASE_DIR);
+            const uniqueRouters = [...new Set(logFiles.map(file => file.router))];
+            
+            // Calculate uptime
+            const uptimeInSeconds = Math.floor((Date.now() - state.startTime) / 1000);
+            
+            const summary = {
+                disk: {
+                    total: systemDisk.blocks,
+                    free: systemDisk.available,
+                    used: systemDisk.used,
+                    usedPercentage: ((systemDisk.used / systemDisk.blocks) * 100).toFixed(2)
+                },
+                routers: uniqueRouters.length,
+                totalLogs: logFiles.length,
+                uptime: uptimeInSeconds
+            };
+            
+            res.send(summary);
+        } catch (error) {
+            console.error('Error getting system summary:', error);
+            res.status(500).send({ error: 'Internal server error' });
+        }
     });
 
     // Get list of all routers that have logs

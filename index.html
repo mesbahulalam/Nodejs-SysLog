@@ -25,23 +25,53 @@
         </div>
     </div>
 
+    <!-- System Summary -->
+    <div class="max-w-7xl mx-auto mb-6">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h1 class="text-2xl font-bold mb-4 text-gray-800">System Summary</h1>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div class="p-4 bg-blue-50 rounded-lg">
+                    <h3 class="text-sm font-medium text-blue-800">Total Disk Space</h3>
+                    <p id="totalDisk" class="text-lg font-semibold text-blue-600">Loading...</p>
+                </div>
+                <div class="p-4 bg-green-50 rounded-lg">
+                    <h3 class="text-sm font-medium text-green-800">Free Space</h3>
+                    <p id="freeDisk" class="text-lg font-semibold text-green-600">Loading...</p>
+                </div>
+                <div class="p-4 bg-red-50 rounded-lg">
+                    <h3 class="text-sm font-medium text-red-800">Used Space</h3>
+                    <p id="usedDisk" class="text-lg font-semibold text-red-600">Loading...</p>
+                </div>
+                <div class="p-4 bg-purple-50 rounded-lg">
+                    <h3 class="text-sm font-medium text-purple-800">Active Routers</h3>
+                    <p id="routerCount" class="text-lg font-semibold text-purple-600">Loading...</p>
+                </div>
+                <div class="p-4 bg-yellow-50 rounded-lg">
+                    <h3 class="text-sm font-medium text-yellow-800">Log Indexes</h3>
+                    <p id="logCount" class="text-lg font-semibold text-yellow-600">Loading...</p>
+                </div>
+                <div class="p-4 bg-indigo-50 rounded-lg">
+                    <h3 class="text-sm font-medium text-indigo-800">Uptime</h3>
+                    <p id="uptime" class="text-lg font-semibold text-indigo-600">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="max-w-7xl mx-auto mb-6">
         <div class="bg-white rounded-lg shadow-lg p-6">
             <h1 class="text-2xl font-bold mb-6 text-gray-800">Global Search</h1>
-    
-                <!-- Server-side search section -->
-                <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-                    <div class="flex gap-4">
-                        <input type="text" id="serverSearch" placeholder="Global search..." class="flex-1 border rounded-md px-3 py-2">
-                        <button id="serverSearchBtn" class="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600">
-                            Search
-                        </button>
-                        <button id="serverSearchResetBtn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
-                            Reset
-                        </button>
-                    </div>
+            <!-- Server-side search section -->
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                <div class="flex gap-4">
+                    <input type="text" id="serverSearch" placeholder="Global search..." class="flex-1 border rounded-md px-3 py-2">
+                    <button id="serverSearchBtn" class="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600">
+                        Search
+                    </button>
+                    <button id="serverSearchResetBtn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
+                        Reset
+                    </button>
                 </div>
-
             </div>
         </div>
     </div>
@@ -129,6 +159,9 @@
         </div>
     </div>
 
+    <script>
+
+    </script>
     <script type="text/javascript" src="script.js"></script>
 </body>
 </html>
