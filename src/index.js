@@ -2,10 +2,10 @@ const fileUtils = require('./fileUtils');
 const setupExpress = require('./expressServer');
 const setupSyslog = require('./syslogServer');
 const consoleManager = require('./consoleManager');
-const checkLicense = require('./license');
+const licenseManager = require('./license');
 
 const init = async () => {
-    // await checkLicense();
+    // await licenseManager.initialize();
     
     // Ensure base log directory exists
     await fileUtils.ensureDirectoryExists('logs');

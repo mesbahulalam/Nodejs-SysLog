@@ -5,14 +5,19 @@ const state = require('./state');
 
 const fileUtils = {
     async ensureDirectoryExists(dirPath) {
+        const absolutePath = path.resolve(process.cwd(), dirPath);
         try {
-            await fs.access(dirPath);
+            await fs.access(absolutePath);
         } catch {
-            await fs.mkdir(dirPath, { recursive: true });
+            await fs.mkdir(absolutePath, { recursive: true });
         }
     },
 
     async writeToFile(routerAddress, filename, newData) {
+        // First ensure base logs directory exists
+        await this.ensureDirectoryExists(CONFIG.LOG_BASE_DIR);
+        
+        // Then create router-specific directory
         const routerDir = path.join(CONFIG.LOG_BASE_DIR, routerAddress);
         await this.ensureDirectoryExists(routerDir);
         
