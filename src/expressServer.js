@@ -1,17 +1,72 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 const CONFIG = require('./config');
 const fileUtils = require('./fileUtils');
 const state = require('./state');
+const userManager = require('./userManager');
 const nodeDiskInfo = require('node-disk-info');
 
 const setupExpress = () => {
     const app = express();
     app.use(cors());
+    app.use(express.json());
+    app.use(cookieParser());
     
     // Serve static files from the 'public' directory
     app.use(express.static('public'));
+
+    // Authentication middleware
+    const requireAuth = (req, res, next) => {
+        const username = req.cookies.username;
+        const hash = req.cookies.hash;
+
+        if (!username || !hash || !userManager.validateSession(username, hash)) {
+            if (req.path === '/login.html' || req.path === '/login') {
+                next();
+            } else {
+                res.redirect('/login.html');
+            }
+            return;
+        }
+        next();
+    };
+
+    // Apply auth middleware to all routes except login
+    app.use((req, res, next) => {
+        if (req.path === '/login.html' || req.path === '/login' || req.path.startsWith('/style.css')) {
+            next();
+        } else {
+            requireAuth(req, res, next);
+        }
+    });
+
+    // Login route
+    app.post('/login', (req, res) => {
+        const { username, password } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({ error: 'Username and password are required' });
+        }
+
+        if (userManager.validateUser(username, password)) {
+            const user = userManager.users.get(username);
+            // Set cookies that expire in 24 hours
+            res.cookie('username', username, { maxAge: 86400000, httpOnly: true });
+            res.cookie('hash', user.hash, { maxAge: 86400000, httpOnly: true });
+            res.json({ success: true });
+        } else {
+            res.status(401).json({ error: 'Invalid username or password' });
+        }
+    });
+
+    // Logout route
+    app.post('/logout', (req, res) => {
+        res.clearCookie('username');
+        res.clearCookie('hash');
+        res.redirect('/login.html');
+    });
 
     // Home route
     app.get('/', (req, res) => {
