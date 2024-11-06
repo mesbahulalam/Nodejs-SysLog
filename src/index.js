@@ -12,7 +12,7 @@ const init = async () => {
     
     setupExpress();
     setupSyslog();
-    consoleManager.startConsoleUpdates();
+    // consoleManager.startConsoleUpdates();
 };
 
 // Start the application

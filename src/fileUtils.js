@@ -90,6 +90,29 @@ const fileUtils = {
             console.error(`Error searching file ${fileInfo.path}:`, error);
             return [];
         }
+    },
+
+    async readJsonFile(filePath) {
+        const absolutePath = path.resolve(process.cwd(), filePath);
+        try {
+            const data = await fs.readFile(absolutePath, 'utf-8');
+            return JSON.parse(data);
+        } catch (error) {
+            console.error(`Error reading JSON file ${absolutePath}:`, error);
+            return null;
+        }
+    },
+
+    async writeJsonFile(filePath, data) {
+        const absolutePath = path.resolve(process.cwd(), filePath);
+        try {
+            const jsonString = JSON.stringify(data, null, 2);
+            await fs.writeFile(absolutePath, jsonString, 'utf-8');
+            return true;
+        } catch (error) {
+            console.error(`Error writing JSON file ${absolutePath}:`, error);
+            return false;
+        }
     }
 };
 

@@ -9,7 +9,7 @@ const setupSyslog = () => {
     const handleSyslogMessage = async (info) => {
         state.updateRouterStats(info.address, { syslog: true });
         
-        const processed = syslogProcessor.processMessage(info);
+        const processed = await syslogProcessor.processMessage(info);
         if (!processed) return;
 
         const filename = timeUtils.getFormattedFilename(info.address);

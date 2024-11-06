@@ -33,7 +33,7 @@ async function loadRouters() {
         
         const select = document.getElementById('routerSelect');
         select.innerHTML = '<option value="">Select a router</option>' + 
-            routers.map(router => `<option value="${router}">${router}</option>`).join('');
+            routers.map(router => `<option value="${router.ip}">${router.name}</option>`).join('');
         
         select.addEventListener('change', loadRouterLogs);
     } catch (error) {

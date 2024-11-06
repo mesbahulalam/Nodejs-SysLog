@@ -106,15 +106,82 @@ const setupExpress = () => {
         }
     });
 
-    // Get list of all routers that have logs
+    // Get list of all routers
     app.get('/routers', async (req, res) => {
         try {
-            const logFiles = await fileUtils.getLogFiles(CONFIG.LOG_BASE_DIR);
-            const uniqueRouters = [...new Set(logFiles.map(file => file.router))];
-            res.send(uniqueRouters);
+            const routers = await fileUtils.readJsonFile('routers.json');
+            if (!routers) {
+                return res.status(500).json({ error: 'Failed to read routers data' });
+            }
+            res.json(routers);
         } catch (error) {
             console.error('Error getting router list:', error);
             res.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Register a new router
+    app.post('/routers/register', async (req, res) => {
+        try {
+            const { name, ip, ppoe } = req.body;
+
+            // Validate required fields
+            if (!name || !ip || !ppoe) {
+                return res.status(400).json({ error: 'Missing required fields' });
+            }
+
+            // Read existing routers
+            const routers = await fileUtils.readJsonFile('routers.json') || [];
+
+            // Check if router with same name or IP already exists
+            if (routers.some(r => r.name === name || r.ip === ip)) {
+                return res.status(400).json({ error: 'Router with same name or IP already exists' });
+            }
+
+            // Add new router
+            routers.push({ name, ip, ppoe });
+
+            // Save updated routers
+            const success = await fileUtils.writeJsonFile('routers.json', routers);
+            if (!success) {
+                return res.status(500).json({ error: 'Failed to save router data' });
+            }
+
+            res.json({ message: 'Router registered successfully' });
+        } catch (error) {
+            console.error('Error registering router:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    });
+
+    // Remove a router
+    app.delete('/routers/:routerId', async (req, res) => {
+        try {
+            const { routerId } = req.params;
+
+            // Read existing routers
+            const routers = await fileUtils.readJsonFile('routers.json') || [];
+
+            // Find router index
+            const routerIndex = routers.findIndex(r => r.name === routerId || r.ip === routerId);
+
+            if (routerIndex === -1) {
+                return res.status(404).json({ error: 'Router not found' });
+            }
+
+            // Remove router
+            routers.splice(routerIndex, 1);
+
+            // Save updated routers
+            const success = await fileUtils.writeJsonFile('routers.json', routers);
+            if (!success) {
+                return res.status(500).json({ error: 'Failed to save router data' });
+            }
+
+            res.json({ message: 'Router removed successfully' });
+        } catch (error) {
+            console.error('Error removing router:', error);
+            res.status(500).json({ error: 'Internal server error' });
         }
     });
 
