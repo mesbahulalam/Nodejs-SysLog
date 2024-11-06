@@ -1,3 +1,4 @@
+
 window.jsPDF = window.jspdf.jsPDF;
 let currentPage = 1;
 let itemsPerPage = 25;
@@ -18,54 +19,8 @@ function resetServerSearch() {
     document.getElementById('serverSearch').value = '';
     document.getElementById('routerSelect').selectedIndex = 0;
     document.getElementById('search').value = '';
-    // Reset all column filters
-    document.querySelectorAll('input[id^="filter"]').forEach(input => {
-        input.value = '';
-    });
-    document.getElementById('startTime').value = '';
-    document.getElementById('endTime').value = '';
     allLogs = [];
     filteredLogs = [];
-    currentPage = 1;
-    renderTable();
-}
-
-function applyFilters() {
-    const startTime = document.getElementById('startTime').value;
-    const endTime = document.getElementById('endTime').value;
-    const routerIp = document.getElementById('filterRouterIp').value.toLowerCase();
-    const userId = document.getElementById('filterUserId').value.toLowerCase();
-    const protocol = document.getElementById('filterProtocol').value.toLowerCase();
-    const mac = document.getElementById('filterMac').value.toLowerCase();
-    const localIp = document.getElementById('filterLocalIp').value.toLowerCase();
-    const localPort = document.getElementById('filterLocalPort').value.toLowerCase();
-    const remoteIp = document.getElementById('filterRemoteIp').value.toLowerCase();
-    const remotePort = document.getElementById('filterRemotePort').value.toLowerCase();
-    const natIp = document.getElementById('filterNatIp').value.toLowerCase();
-    const natPort = document.getElementById('filterNatPort').value.toLowerCase();
-
-    filteredLogs = allLogs.filter(item => {
-        const itemTime = new Date(item.time);
-        
-        // Time range filter
-        if (startTime && new Date(startTime) > itemTime) return false;
-        if (endTime && new Date(endTime) < itemTime) return false;
-
-        // Column filters
-        if (routerIp && !item.router_ip.toLowerCase().includes(routerIp)) return false;
-        if (userId && !item.user_id.toLowerCase().includes(userId)) return false;
-        if (protocol && !item.protocol.toLowerCase().includes(protocol)) return false;
-        if (mac && !item.mac.toLowerCase().includes(mac)) return false;
-        if (localIp && !item.local_ip.toLowerCase().includes(localIp)) return false;
-        if (localPort && !item.local_port.toLowerCase().includes(localPort)) return false;
-        if (remoteIp && !item.remote_ip.toLowerCase().includes(remoteIp)) return false;
-        if (remotePort && !item.remote_port.toLowerCase().includes(remotePort)) return false;
-        if (natIp && !item.nat_ip.toLowerCase().includes(natIp)) return false;
-        if (natPort && !item.nat_port.toLowerCase().includes(natPort)) return false;
-
-        return true;
-    });
-
     currentPage = 1;
     renderTable();
 }
@@ -440,20 +395,6 @@ document.getElementById('search').addEventListener('input', (e) => {
     currentPage = 1;
     renderTable();
 });
-
-// Add event listeners for column filters
-document.getElementById('startTime').addEventListener('input', applyFilters);
-document.getElementById('endTime').addEventListener('input', applyFilters);
-document.getElementById('filterRouterIp').addEventListener('input', applyFilters);
-document.getElementById('filterUserId').addEventListener('input', applyFilters);
-document.getElementById('filterProtocol').addEventListener('input', applyFilters);
-document.getElementById('filterMac').addEventListener('input', applyFilters);
-document.getElementById('filterLocalIp').addEventListener('input', applyFilters);
-document.getElementById('filterLocalPort').addEventListener('input', applyFilters);
-document.getElementById('filterRemoteIp').addEventListener('input', applyFilters);
-document.getElementById('filterRemotePort').addEventListener('input', applyFilters);
-document.getElementById('filterNatIp').addEventListener('input', applyFilters);
-document.getElementById('filterNatPort').addEventListener('input', applyFilters);
 
 document.getElementById('serverSearchBtn').addEventListener('click', performServerSearch);
 document.getElementById('serverSearchResetBtn').addEventListener('click', resetServerSearch);

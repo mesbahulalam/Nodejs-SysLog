@@ -27,7 +27,6 @@
 
     <!-- Header with Logout -->
     <div class="max-w-7xl mx-auto mb-6 flex justify-end">
-        <a href="/add-router.html" class="inline-block mb-6 mr-4 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors duration-200">+ Add Router</a>
         <form action="/logout" method="POST">
             <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
                 Logout
@@ -128,6 +127,9 @@
                 </div>
                 <div class="flex items-center gap-4">
                     <input type="text" id="search" placeholder="Search..." class="border rounded-md px-3 py-2 w-64">
+                    <!--button id="toggleAdvanced" class="text-blue-600 hover:text-blue-800">
+                        Advanced Search
+                    </button-->
                 </div>
             </div>
 
@@ -135,75 +137,17 @@
                 <table class="min-w-full">
                     <thead>
                         <tr class="bg-gray-50">
-                            <th class="px-6 py-3">
-                                <div class="flex flex-col space-y-2">
-                                    <span class="sort-header text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="time">Time</span>
-                                    <div class="flex space-x-2">
-                                        <input type="datetime-local" id="startTime" class="border rounded-md px-2 py-1 text-xs w-full" placeholder="Start">
-                                        <input type="datetime-local" id="endTime" class="border rounded-md px-2 py-1 text-xs w-full" placeholder="End">
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="px-6 py-3">
-                                <div class="flex flex-col space-y-2">
-                                    <span class="sort-header text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="router_ip">Router IP</span>
-                                    <input type="text" id="filterRouterIp" class="border rounded-md px-2 py-1 text-xs" placeholder="Filter Router IP">
-                                </div>
-                            </th>
-                            <th class="px-6 py-3">
-                                <div class="flex flex-col space-y-2">
-                                    <span class="sort-header text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="user_id">User ID</span>
-                                    <input type="text" id="filterUserId" class="border rounded-md px-2 py-1 text-xs" placeholder="Filter User ID">
-                                </div>
-                            </th>
-                            <th class="px-6 py-3">
-                                <div class="flex flex-col space-y-2">
-                                    <span class="sort-header text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="protocol">Protocol</span>
-                                    <input type="text" id="filterProtocol" class="border rounded-md px-2 py-1 text-xs" placeholder="Filter Protocol">
-                                </div>
-                            </th>
-                            <th class="px-6 py-3">
-                                <div class="flex flex-col space-y-2">
-                                    <span class="sort-header text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="mac">MAC</span>
-                                    <input type="text" id="filterMac" class="border rounded-md px-2 py-1 text-xs" placeholder="Filter MAC">
-                                </div>
-                            </th>
-                            <th class="px-6 py-3">
-                                <div class="flex flex-col space-y-2">
-                                    <span class="sort-header text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="local_ip">Local IP</span>
-                                    <input type="text" id="filterLocalIp" class="border rounded-md px-2 py-1 text-xs" placeholder="Filter Local IP">
-                                </div>
-                            </th>
-                            <th class="px-6 py-3">
-                                <div class="flex flex-col space-y-2">
-                                    <span class="sort-header text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="local_port">Port</span>
-                                    <input type="text" id="filterLocalPort" class="border rounded-md px-2 py-1 text-xs" placeholder="Filter Port">
-                                </div>
-                            </th>
-                            <th class="px-6 py-3">
-                                <div class="flex flex-col space-y-2">
-                                    <span class="sort-header text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="remote_ip">Remote IP</span>
-                                    <input type="text" id="filterRemoteIp" class="border rounded-md px-2 py-1 text-xs" placeholder="Filter Remote IP">
-                                </div>
-                            </th>
-                            <th class="px-6 py-3">
-                                <div class="flex flex-col space-y-2">
-                                    <span class="sort-header text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="remote_port">Port</span>
-                                    <input type="text" id="filterRemotePort" class="border rounded-md px-2 py-1 text-xs" placeholder="Filter Port">
-                                </div>
-                            </th>
-                            <th class="px-6 py-3">
-                                <div class="flex flex-col space-y-2">
-                                    <span class="sort-header text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="nat_ip">NAT IP</span>
-                                    <input type="text" id="filterNatIp" class="border rounded-md px-2 py-1 text-xs" placeholder="Filter NAT IP">
-                                </div>
-                            </th>
-                            <th class="px-6 py-3">
-                                <div class="flex flex-col space-y-2">
-                                    <span class="sort-header text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="nat_port">Port</span>
-                                    <input type="text" id="filterNatPort" class="border rounded-md px-2 py-1 text-xs" placeholder="Filter Port">
-                                </div>
-                            </th>
+                            <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="time">Time</th>
+                            <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="router_ip">Router IP</th>
+                            <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="user_id">User ID</th>
+                            <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="protocol">Protocol</th>
+                            <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="mac">MAC</th>
+                            <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="local_ip">Local IP</th>
+                            <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="local_port">Port</th>
+                            <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="remote_ip">Remote IP</th>
+                            <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="remote_port">Port</th>
+                            <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="remote_ip">NAT IP</th>
+                            <th class="sort-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-field="remote_port">Port</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
