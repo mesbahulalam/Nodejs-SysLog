@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Router Registration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-2xl mx-auto my-2">
+        <a href="/" class="inline-block mb-6 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors duration-200">← Back to Home</a>
+    </div>
+
+    <div class="max-w-2xl mx-auto my-5 p-6 bg-white rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold mb-6">Add Router</h2>
+        <form id="routerForm" class="space-y-4">
+            <!-- Core Router Section -->
+            <div class="border-b pb-4 mb-4">
+                <h3 class="text-xl font-semibold mb-4">Core Router Details</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label for="name" class="block font-semibold mb-1">Router Name:</label>
+                        <input type="text" id="name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="ip" class="block font-semibold mb-1">Router IP:</label>
+                        <input type="text" id="ip" required pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- PPOE Section -->
+            <div class="border-b pb-4">
+                <h3 class="text-xl font-semibold mb-4">PPOE Configuration</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label for="ppoeName" class="block font-semibold mb-1">PPOE Name:</label>
+                        <input type="text" id="ppoeName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="ppoeHost" class="block font-semibold mb-1">PPOE Host IP:</label>
+                        <input type="text" id="ppoeHost" required pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="ppoeUser" class="block font-semibold mb-1">PPOE Username:</label>
+                        <input type="text" id="ppoeUser" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="ppoePassword" class="block font-semibold mb-1">PPOE Password:</label>
+                        <input type="password" id="ppoePassword" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="ppoePort" class="block font-semibold mb-1">PPOE Port:</label>
+                        <input type="number" id="ppoePort" required min="1" max="65535" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200">Register Router</button>
+        </form>
+
+        <div class="mt-8">
+            <h3 class="text-xl font-bold mb-4">Registered Routers</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="px-4 py-2 border border-gray-200 text-left">Router Name</th>
+                            <th class="px-4 py-2 border border-gray-200 text-left">Router IP</th>
+                            <th class="px-4 py-2 border border-gray-200 text-left">PPOE Name</th>
+                            <th class="px-4 py-2 border border-gray-200 text-left">PPOE Host</th>
+                            <th class="px-4 py-2 border border-gray-200 text-left">PPOE Port</th>
+                            <th class="px-4 py-2 border border-gray-200 text-left">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="routerList" class="bg-white">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const routerForm = document.getElementById('routerForm');
+
+            // Load registered routers
+            async function loadRegisteredRouters() {
+                try {
+                    const response = await fetch('/routers');
+                    const routers = await response.json();
+                    const routerList = document.getElementById('routerList');
+                    routerList.innerHTML = '';
+                    routers.forEach(router => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="px-4 py-2 border border-gray-200">${router.name}</td>
+                            <td class="px-4 py-2 border border-gray-200">${router.ip}</td>
+                            <td class="px-4 py-2 border border-gray-200">${router.ppoe?.name || '-'}</td>
+                            <td class="px-4 py-2 border border-gray-200">${router.ppoe?.host || '-'}</td>
+                            <td class="px-4 py-2 border border-gray-200">${router.ppoe?.port || '-'}</td>
+                            <td class="px-4 py-2 border border-gray-200">
+                                <button onclick="removeRouter('${router.name}')" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
+                                    Remove
+                                </button>
+                            </td>
+                        `;
+                        routerList.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error('Error loading routers:', error);
+                }
+            }
+
+            // Handle form submission
+            routerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = {
+                    name: document.getElementById('name').value,
+                    ip: document.getElementById('ip').value,
+                    ppoe: {
+                        name: document.getElementById('ppoeName').value,
+                        host: document.getElementById('ppoeHost').value,
+                        user: document.getElementById('ppoeUser').value,
+                        password: document.getElementById('ppoePassword').value,
+                        port: parseInt(document.getElementById('ppoePort').value)
+                    }
+                };
+
+                try {
+                    const response = await fetch('/routers/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    if (response.ok) {
+                        alert('Router registered successfully');
+                        routerForm.reset();
+                        loadRegisteredRouters();
+                    } else {
+                        const error = await response.json();
+                        alert(error.message || 'Failed to register router');
+                    }
+                } catch (error) {
+                    console.error('Error registering router:', error);
+                    alert('Failed to register router');
+                }
+            });
+
+            // Remove router function
+            window.removeRouter = async (routerName) => {
+                if (!confirm(`Are you sure you want to remove router "${routerName}"?`)) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/routers/${routerName}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        alert('Router removed successfully');
+                        loadRegisteredRouters();
+                    } else {
+                        const error = await response.json();
+                        alert(error.message || 'Failed to remove router');
+                    }
+                } catch (error) {
+                    console.error('Error removing router:', error);
+                    alert('Failed to remove router');
+                }
+            };
+
+            // Initial load of registered routers
+            loadRegisteredRouters();
+        });
+    </script>
+</body>
+</html>
