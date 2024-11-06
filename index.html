@@ -27,6 +27,7 @@
 
     <!-- Header with Logout -->
     <div class="max-w-7xl mx-auto mb-6 flex justify-end">
+        <a href="/add-router.html" class="inline-block mb-6 mr-4 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors duration-200">+ Add Router</a>
         <form action="/logout" method="POST">
             <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
                 Logout
@@ -80,6 +81,9 @@
                     <button id="serverSearchResetBtn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
                         Reset
                     </button>
+                    <a href="/advanced-search.html" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                        Advanced Search
+                    </a>
                 </div>
             </div>
         </div>
@@ -127,9 +131,6 @@
                 </div>
                 <div class="flex items-center gap-4">
                     <input type="text" id="search" placeholder="Search..." class="border rounded-md px-3 py-2 w-64">
-                    <!--button id="toggleAdvanced" class="text-blue-600 hover:text-blue-800">
-                        Advanced Search
-                    </button-->
                 </div>
             </div>
 

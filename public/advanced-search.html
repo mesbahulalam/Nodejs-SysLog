@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Search - Syslog Viewer</title>
+    <title>Advanced Syslog Search</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="style.css">
+    <!-- Add XLSX library for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <!-- Add jsPDF library for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen p-8">
     <!-- Loading Overlay -->
@@ -22,18 +27,18 @@
     <!-- Header with Navigation -->
     <div class="max-w-7xl mx-auto mb-6 flex justify-between items-center">
         <a href="/" class="text-blue-600 hover:text-blue-800">← Back to Dashboard</a>
-        <form action="/logout" method="POST">
-            <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
-                Logout
-            </button>
-        </form>
+        <div class="flex gap-4">
+            <a href="/add-router.html" class="bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors duration-200">+ Add Router</a>
+            <form action="/logout" method="POST">
+                <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">Logout</button>
+            </form>
+        </div>
     </div>
 
     <div class="max-w-7xl mx-auto">
         <div class="bg-white rounded-lg shadow-lg p-6">
             <h1 class="text-2xl font-bold mb-6 text-gray-800">Advanced Search</h1>
 
-            <!-- Search Form -->
             <form id="advancedSearchForm" class="space-y-6">
                 <!-- Router Selection -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -43,79 +48,96 @@
                             <option value="">All Routers</option>
                         </select>
                     </div>
+                </div>
 
-                    <!-- Time Range -->
+                <!-- Time Range -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Time Range</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <input type="datetime-local" id="timeStart" class="border border-gray-300 rounded-md p-2">
-                            <input type="datetime-local" id="timeEnd" class="border border-gray-300 rounded-md p-2">
-                        </div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
+                        <input type="datetime-local" id="timeStart" class="w-full border border-gray-300 rounded-md p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">End Time</label>
+                        <input type="datetime-local" id="timeEnd" class="w-full border border-gray-300 rounded-md p-2">
                     </div>
                 </div>
 
-                <!-- Search Fields -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- User and Protocol -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">User ID</label>
-                        <input type="text" id="userId" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter User ID">
+                        <input type="text" id="userId" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter user ID">
                     </div>
-
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Protocol</label>
-                        <input type="text" id="protocol" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter Protocol">
+                        <input type="text" id="protocol" class="w-full border border-gray-300 rounded-md p-2" placeholder="e.g., tcp, udp">
                     </div>
+                </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">MAC Address</label>
-                        <input type="text" id="mac" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter MAC Address">
-                    </div>
+                <!-- MAC Address -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">MAC Address</label>
+                    <input type="text" id="mac" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter MAC address">
+                </div>
 
+                <!-- Local Connection -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Local IP</label>
-                        <input type="text" id="localIp" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter Local IP">
+                        <input type="text" id="localIp" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter local IP">
                     </div>
-
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Local Port</label>
-                        <input type="text" id="localPort" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter Local Port">
+                        <input type="text" id="localPort" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter local port">
                     </div>
+                </div>
 
+                <!-- Remote Connection -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Remote IP</label>
-                        <input type="text" id="remoteIp" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter Remote IP">
+                        <input type="text" id="remoteIp" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter remote IP">
                     </div>
-
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Remote Port</label>
-                        <input type="text" id="remotePort" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter Remote Port">
+                        <input type="text" id="remotePort" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter remote port">
                     </div>
+                </div>
 
+                <!-- NAT Connection -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">NAT IP</label>
                         <input type="text" id="natIp" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter NAT IP">
                     </div>
-
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">NAT Port</label>
-                        <input type="text" id="natPort" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter NAT Port">
+                        <input type="text" id="natPort" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter NAT port">
                     </div>
                 </div>
 
-                <!-- Search Button -->
-                <div class="flex justify-end space-x-4">
-                    <button type="button" id="resetBtn" class="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
-                        Reset
-                    </button>
-                    <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-                        Search
-                    </button>
+                <!-- Search Controls -->
+                <div class="flex justify-between items-center">
+                    <div class="flex space-x-4">
+                        <div class="dropdown">
+                            <button type="button" id="exportBtn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Export Results</button>
+                            <div id="exportDropdown" class="dropdown-content">
+                                <button type="button" id="exportCSV" class="hover:bg-gray-100">CSV</button>
+                                <button type="button" id="exportExcel" class="hover:bg-gray-100">Excel</button>
+                                <button type="button" id="exportPDF" class="hover:bg-gray-100">PDF</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex space-x-4">
+                        <button type="button" id="resetBtn" class="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Reset</button>
+                        <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Search</button>
+                    </div>
                 </div>
             </form>
 
             <!-- Results Table -->
             <div class="mt-8">
-                <h2 class="text-xl font-semibold mb-4">Search Results</h2>
+                <h2 class="text-xl font-semibold mb-4">Search Results <span id="resultsCount">(0)</span></h2>
                 <div class="overflow-x-auto">
                     <table class="min-w-full">
                         <thead>
@@ -141,6 +163,301 @@
         </div>
     </div>
 
-    <script src="advanced-search.js"></script>
+    <script>
+        // Show/hide loading overlay
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
+        // Load routers into select dropdown
+        async function loadRouters() {
+            try {
+                showLoading();
+                const response = await fetch('http://localhost:3000/routers');
+                const routers = await response.json();
+                
+                const select = document.getElementById('routerSelect');
+                select.innerHTML = '<option value="">All Routers</option>' + 
+                    routers.map(router => `<option value="${router.ip}">${router.name}</option>`).join('');
+            } catch (error) {
+                console.error('Error loading routers:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Reset form
+        function resetForm() {
+            document.getElementById('advancedSearchForm').reset();
+            document.getElementById('resultsTableBody').innerHTML = '';
+            document.getElementById('resultsCount').textContent = '(0)';
+        }
+
+        // Parse CSV line
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            if (current) {
+                result.push(current.trim());
+            }
+            
+            return result;
+        }
+
+        // Export functions
+        function convertToCSV(data) {
+            const headers = ['Time', 'Router IP', 'User ID', 'Protocol', 'MAC', 'Local IP', 'Port', 'Remote IP', 'Port', 'NAT IP', 'Port'];
+            const rows = data.map(item => [
+                new Date(item.time).toLocaleString(),
+                item.router_ip,
+                item.user_id,
+                item.protocol,
+                item.mac,
+                item.local_ip,
+                item.local_port,
+                item.remote_ip,
+                item.remote_port,
+                item.nat_ip,
+                item.nat_port
+            ]);
+            
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.map(cell => {
+                    const escaped = String(cell).replace(/"/g, '""');
+                    return cell.includes(',') ? `"${escaped}"` : escaped;
+                }).join(','))
+            ].join('\n');
+            
+            return csvContent;
+        }
+
+        function downloadCSV(data, filename) {
+            const csvContent = convertToCSV(data);
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            if (navigator.msSaveBlob) {
+                navigator.msSaveBlob(blob, filename);
+            } else {
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        function downloadExcel(data, filename) {
+            const headers = ['Time', 'Router IP', 'User ID', 'Protocol', 'MAC', 'Local IP', 'Port', 'Remote IP', 'Port', 'NAT IP', 'NAT Port'];
+            const rows = data.map(item => [
+                new Date(item.time).toLocaleString(),
+                item.router_ip,
+                item.user_id,
+                item.protocol,
+                item.mac,
+                item.local_ip,
+                item.local_port,
+                item.remote_ip,
+                item.remote_port,
+                item.nat_ip,
+                item.nat_port
+            ]);
+
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Syslog Data");
+            XLSX.writeFile(wb, filename);
+        }
+
+        function downloadPDF(data, filename) {
+            const doc = new jsPDF();
+            const headers = [['Time', 'Router IP', 'User ID', 'Protocol', 'MAC', 'Local IP', 'Port', 'Remote IP', 'Port', 'NAT IP', 'NAT Port']];
+            const rows = data.map(item => [
+                new Date(item.time).toLocaleString(),
+                item.router_ip,
+                item.user_id,
+                item.protocol,
+                item.mac,
+                item.local_ip,
+                item.local_port,
+                item.remote_ip,
+                item.remote_port,
+                item.nat_ip,
+                item.nat_port
+            ]);
+
+            doc.autoTable({
+                head: headers,
+                body: rows,
+                margin: { top: 20 },
+                styles: { overflow: 'linebreak' },
+                columnStyles: {
+                    0: { cellWidth: 40 },
+                    1: { cellWidth: 20 },
+                    2: { cellWidth: 20 },
+                    3: { cellWidth: 20 },
+                    4: { cellWidth: 25 },
+                    5: { cellWidth: 20 },
+                    6: { cellWidth: 15 },
+                    7: { cellWidth: 20 },
+                    8: { cellWidth: 15 },
+                    9: { cellWidth: 20 },
+                    10: { cellWidth: 15 }
+                }
+            });
+
+            doc.save(filename);
+        }
+
+        // Render results
+        function renderResults(logs) {
+            const tbody = document.getElementById('resultsTableBody');
+            tbody.innerHTML = logs.map(log => {
+                const parts = parseCSVLine(log.content);
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(parts[0]).toLocaleString()}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${parts[1]}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${parts[2]}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${parts[3]}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${parts[4]}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${parts[5]}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${parts[6]}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${parts[7]}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${parts[8]}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${parts[9]}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${parts[10]}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Update results count
+            document.getElementById('resultsCount').textContent = `(${logs.length})`;
+        }
+
+        // Handle form submission
+        document.getElementById('advancedSearchForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const formData = {
+                routerId: document.getElementById('routerSelect').value,
+                timeStart: document.getElementById('timeStart').value,
+                timeEnd: document.getElementById('timeEnd').value,
+                userId: document.getElementById('userId').value,
+                protocol: document.getElementById('protocol').value,
+                mac: document.getElementById('mac').value,
+                localIp: document.getElementById('localIp').value,
+                localPort: document.getElementById('localPort').value,
+                remoteIp: document.getElementById('remoteIp').value,
+                remotePort: document.getElementById('remotePort').value,
+                natIp: document.getElementById('natIp').value,
+                natPort: document.getElementById('natPort').value
+            };
+
+            try {
+                showLoading();
+                const response = await fetch('http://localhost:3000/advanced-search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const results = await response.json();
+                window.searchResults = results.map(log => {
+                    const parts = parseCSVLine(log.content);
+                    return {
+                        time: parts[0],
+                        router_ip: parts[1],
+                        user_id: parts[2],
+                        protocol: parts[3],
+                        mac: parts[4],
+                        local_ip: parts[5],
+                        local_port: parts[6],
+                        remote_ip: parts[7],
+                        remote_port: parts[8],
+                        nat_ip: parts[9],
+                        nat_port: parts[10]
+                    };
+                });
+    
+                renderResults(results);
+            } catch (error) {
+                console.error('Error performing search:', error);
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Reset button handler
+        document.getElementById('resetBtn').addEventListener('click', resetForm);
+
+        // Export button handlers
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            document.getElementById('exportDropdown').classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        window.addEventListener('click', function(event) {
+            if (!event.target.matches('#exportBtn')) {
+                var dropdowns = document.getElementsByClassName('dropdown-content');
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        });
+
+        document.getElementById('exportCSV').addEventListener('click', () => {
+            if (!window.searchResults || window.searchResults.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            downloadCSV(window.searchResults, `syslog-advanced-search-${timestamp}.csv`);
+        });
+
+        document.getElementById('exportExcel').addEventListener('click', () => {
+            if (!window.searchResults || window.searchResults.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            downloadExcel(window.searchResults, `syslog-advanced-search-${timestamp}.xlsx`);
+        });
+
+        document.getElementById('exportPDF').addEventListener('click', () => {
+            if (!window.searchResults || window.searchResults.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            downloadPDF(window.searchResults, `syslog-advanced-search-${timestamp}.pdf`);
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadRouters);
+    </script>
 </body>
 </html>
