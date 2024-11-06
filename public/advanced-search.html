@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Search - Syslog Viewer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white p-5 rounded-lg flex items-center space-x-3">
+            <svg class="spinner w-8 h-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-gray-700">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Header with Navigation -->
+    <div class="max-w-7xl mx-auto mb-6 flex justify-between items-center">
+        <a href="/" class="text-blue-600 hover:text-blue-800">← Back to Dashboard</a>
+        <form action="/logout" method="POST">
+            <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
+                Logout
+            </button>
+        </form>
+    </div>
+
+    <div class="max-w-7xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h1 class="text-2xl font-bold mb-6 text-gray-800">Advanced Search</h1>
+
+            <!-- Search Form -->
+            <form id="advancedSearchForm" class="space-y-6">
+                <!-- Router Selection -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Router</label>
+                        <select id="routerSelect" class="w-full border border-gray-300 rounded-md p-2">
+                            <option value="">All Routers</option>
+                        </select>
+                    </div>
+
+                    <!-- Time Range -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Time Range</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <input type="datetime-local" id="timeStart" class="border border-gray-300 rounded-md p-2">
+                            <input type="datetime-local" id="timeEnd" class="border border-gray-300 rounded-md p-2">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Fields -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">User ID</label>
+                        <input type="text" id="userId" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter User ID">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Protocol</label>
+                        <input type="text" id="protocol" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter Protocol">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">MAC Address</label>
+                        <input type="text" id="mac" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter MAC Address">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Local IP</label>
+                        <input type="text" id="localIp" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter Local IP">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Local Port</label>
+                        <input type="text" id="localPort" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter Local Port">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Remote IP</label>
+                        <input type="text" id="remoteIp" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter Remote IP">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Remote Port</label>
+                        <input type="text" id="remotePort" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter Remote Port">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">NAT IP</label>
+                        <input type="text" id="natIp" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter NAT IP">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">NAT Port</label>
+                        <input type="text" id="natPort" class="w-full border border-gray-300 rounded-md p-2" placeholder="Enter NAT Port">
+                    </div>
+                </div>
+
+                <!-- Search Button -->
+                <div class="flex justify-end space-x-4">
+                    <button type="button" id="resetBtn" class="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
+                        Reset
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                        Search
+                    </button>
+                </div>
+            </form>
+
+            <!-- Results Table -->
+            <div class="mt-8">
+                <h2 class="text-xl font-semibold mb-4">Search Results</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Router IP</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Protocol</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MAC</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local IP</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Port</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remote IP</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Port</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NAT IP</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Port</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="advanced-search.js"></script>
+</body>
+</html>

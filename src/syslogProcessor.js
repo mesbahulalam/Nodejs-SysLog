@@ -59,7 +59,7 @@ const syslogProcessor = {
         const { ip: remote_ip, port: remote_port } = this.ip_port_to_ip_and_port(connection.split('->')[1]);
         
         const nat = stringUtils.cut(info.msg, 'NAT (', ')');
-        const { ip: nat_ip, port: nat_port } = this.ip_port_to_ip_and_port(nat.split('->')[1]);
+        const { ip: nat_ip, port: nat_port } = this.ip_port_to_ip_and_port(nat.split('->')[0]);
         const mac = stringUtils.cut(info.msg, 'src-mac ', ', ');
 
         // Try to get user_id directly from message first

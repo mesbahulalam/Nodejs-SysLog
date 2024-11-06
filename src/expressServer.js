@@ -73,6 +73,78 @@ const setupExpress = () => {
         res.sendFile(path.join(__dirname, '..', 'index.html'));
     });
 
+    // Advanced Search route
+    app.post('/advanced-search', async (req, res) => {
+        try {
+            const {
+                routerId,
+                timeRange,
+                user_id,
+                protocol,
+                mac,
+                local_ip,
+                local_port,
+                remote_ip,
+                remote_port,
+                nat_ip,
+                nat_port
+            } = req.body;
+
+            let logFiles;
+            if (routerId) {
+                logFiles = (await fileUtils.getLogFiles(CONFIG.LOG_BASE_DIR)).filter(f => f.router === routerId);
+            } else {
+                logFiles = await fileUtils.getLogFiles(CONFIG.LOG_BASE_DIR);
+            }
+
+            if (logFiles.length === 0) {
+                return res.status(404).send({ error: 'No logs found' });
+            }
+
+            const allLogLines = await Promise.all(logFiles.map(file => fileUtils.readLogFile(file)));
+            let results = allLogLines.flat().map(log => {
+                const parts = log.content.split(',');
+                return {
+                    time: parts[0],
+                    router_ip: parts[1],
+                    user_id: parts[2],
+                    protocol: parts[3],
+                    mac: parts[4],
+                    local_ip: parts[5],
+                    local_port: parts[6],
+                    remote_ip: parts[7],
+                    remote_port: parts[8],
+                    nat_ip: parts[9],
+                    nat_port: parts[10]
+                };
+            });
+
+            // Apply filters
+            if (timeRange) {
+                const [start, end] = timeRange.split(',');
+                results = results.filter(log => {
+                    const logTime = new Date(log.time).getTime();
+                    return logTime >= new Date(start).getTime() && logTime <= new Date(end).getTime();
+                });
+            }
+
+            if (user_id) results = results.filter(log => log.user_id.includes(user_id));
+            if (protocol) results = results.filter(log => log.protocol.toLowerCase().includes(protocol.toLowerCase()));
+            if (mac) results = results.filter(log => log.mac.toLowerCase().includes(mac.toLowerCase()));
+            if (local_ip) results = results.filter(log => log.local_ip.includes(local_ip));
+            if (local_port) results = results.filter(log => log.local_port.includes(local_port));
+            if (remote_ip) results = results.filter(log => log.remote_ip.includes(remote_ip));
+            if (remote_port) results = results.filter(log => log.remote_port.includes(remote_port));
+            if (nat_ip) results = results.filter(log => log.nat_ip.includes(nat_ip));
+            if (nat_port) results = results.filter(log => log.nat_port.includes(nat_port));
+
+            res.send(results);
+        } catch (error) {
+            console.error('Error processing advanced search:', error);
+            res.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
     // Get system summary
     app.get('/summary', async (req, res) => {
         try {
