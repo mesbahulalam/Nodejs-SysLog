@@ -39,4 +39,4 @@ async function updateSummary() {
 
 // Update summary every 30 seconds
 updateSummary();
-setInterval(updateSummary, 10000);
+setInterval(updateSummary, 1000);

@@ -1,3 +1,4 @@
+
 window.jsPDF = window.jspdf.jsPDF;
 let currentPage = 1;
 let itemsPerPage = 25;
@@ -250,45 +251,6 @@ async function performServerSearch() {
         hideLoading();
     }
 }
-
-async function performAdvancedSearch(event) {
-    event.preventDefault();
-
-    const routerId = document.getElementById('routerSelect').value;
-    const timeStart = document.getElementById('timeStart').value;
-    const timeEnd = document.getElementById('timeEnd').value;
-    const userId = document.getElementById('userId').value;
-    const protocol = document.getElementById('protocol').value;
-    const mac = document.getElementById('mac').value;
-    const localIp = document.getElementById('localIp').value;
-    const localPort = document.getElementById('localPort').value;
-    const remoteIp = document.getElementById('remoteIp').value;
-    const remotePort = document.getElementById('remotePort').value;
-    const natIp = document.getElementById('natIp').value;
-    const natPort = document.getElementById('natPort').value;
-
-    try {
-        showLoading();
-        const response = await fetch('http://localhost:3000/advanced-search', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ routerId, timeStart, timeEnd, userId, protocol, mac, localIp, localPort, remoteIp, remotePort, natIp, natPort })
-        });
-        const logs = await response.json();
-
-        allLogs = logs;
-        filteredLogs = [...allLogs];
-        currentPage = 1;
-        renderTable();
-    } catch (error) {
-        console.error('Error performing advanced search:', error);
-    } finally {
-        hideLoading();
-    }
-}
-
-document.getElementById('advancedSearchForm').addEventListener('submit', performAdvancedSearch);
-document.getElementById('resetBtn').addEventListener('click', resetServerSearch);
 
 function renderTable() {
     const startIndex = (currentPage - 1) * itemsPerPage;

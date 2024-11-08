@@ -7,7 +7,6 @@ const fileUtils = require('./fileUtils');
 const state = require('./state');
 const userManager = require('./userManager');
 const nodeDiskInfo = require('node-disk-info');
-const fs = require('fs').promises;
 
 const setupExpress = () => {
     const app = express();
@@ -74,62 +73,72 @@ const setupExpress = () => {
         res.sendFile(path.join(__dirname, '..', 'index.html'));
     });
 
-    // Advanced search endpoint
+    // Advanced Search route
     app.post('/advanced-search', async (req, res) => {
-        const {
-            routerId,
-            timeStart,
-            timeEnd,
-            userId,
-            protocol,
-            mac,
-            localIp,
-            localPort,
-            remoteIp,
-            remotePort,
-            natIp,
-            natPort
-        } = req.body;
-
         try {
-            // Get all log files or filter by router if specified
-            const logFiles = await fileUtils.getLogFiles(CONFIG.LOG_BASE_DIR);
-            const targetFiles = routerId 
-                ? logFiles.filter(f => f.router === routerId)
-                : logFiles;
+            const {
+                routerId,
+                timeRange,
+                user_id,
+                protocol,
+                mac,
+                local_ip,
+                local_port,
+                remote_ip,
+                remote_port,
+                nat_ip,
+                nat_port
+            } = req.body;
 
-            if (targetFiles.length === 0) {
-                return res.json([]);
+            let logFiles;
+            if (routerId) {
+                logFiles = (await fileUtils.getLogFiles(CONFIG.LOG_BASE_DIR)).filter(f => f.router === routerId);
+            } else {
+                logFiles = await fileUtils.getLogFiles(CONFIG.LOG_BASE_DIR);
             }
 
-            // Read all matching log files
-            const allLogLines = await Promise.all(targetFiles.map(file => fileUtils.readLogFile(file)));
-            let results = allLogLines.flat();
+            if (logFiles.length === 0) {
+                return res.status(404).send({ error: 'No logs found' });
+            }
 
-            // Filter results based on search criteria
-            results = results.filter(log => {
-                const parts = log.content.split(',').map(part => part.trim().replace(/"/g, ''));
-                const logTime = new Date(parts[0]);
-                
-                // Time range filter
-                if (timeStart && logTime < new Date(timeStart)) return false;
-                if (timeEnd && logTime > new Date(timeEnd)) return false;
-                
-                // Other filters
-                if (userId && !parts[2].toLowerCase().includes(userId.toLowerCase())) return false;
-                if (protocol && !parts[3].toLowerCase().includes(protocol.toLowerCase())) return false;
-                if (mac && !parts[4].toLowerCase().includes(mac.toLowerCase())) return false;
-                if (localIp && !parts[5].toLowerCase().includes(localIp.toLowerCase())) return false;
-                if (localPort && !parts[6].includes(localPort)) return false;
-                if (remoteIp && !parts[7].toLowerCase().includes(remoteIp.toLowerCase())) return false;
-                if (remotePort && !parts[8].includes(remotePort)) return false;
-                if (natIp && !parts[9].toLowerCase().includes(natIp.toLowerCase())) return false;
-                if (natPort && !parts[10].includes(natPort)) return false;
-
-                return true;
+            const allLogLines = await Promise.all(logFiles.map(file => fileUtils.readLogFile(file)));
+            let results = allLogLines.flat().map(log => {
+                const parts = log.content.split(',');
+                return {
+                    time: parts[0],
+                    router_ip: parts[1],
+                    user_id: parts[2],
+                    protocol: parts[3],
+                    mac: parts[4],
+                    local_ip: parts[5],
+                    local_port: parts[6],
+                    remote_ip: parts[7],
+                    remote_port: parts[8],
+                    nat_ip: parts[9],
+                    nat_port: parts[10]
+                };
             });
 
-            res.json(results);
+            // Apply filters
+            if (timeRange) {
+                const [start, end] = timeRange.split(',');
+                results = results.filter(log => {
+                    const logTime = new Date(log.time).getTime();
+                    return logTime >= new Date(start).getTime() && logTime <= new Date(end).getTime();
+                });
+            }
+
+            if (user_id) results = results.filter(log => log.user_id.includes(user_id));
+            if (protocol) results = results.filter(log => log.protocol.toLowerCase().includes(protocol.toLowerCase()));
+            if (mac) results = results.filter(log => log.mac.toLowerCase().includes(mac.toLowerCase()));
+            if (local_ip) results = results.filter(log => log.local_ip.includes(local_ip));
+            if (local_port) results = results.filter(log => log.local_port.includes(local_port));
+            if (remote_ip) results = results.filter(log => log.remote_ip.includes(remote_ip));
+            if (remote_port) results = results.filter(log => log.remote_port.includes(remote_port));
+            if (nat_ip) results = results.filter(log => log.nat_ip.includes(nat_ip));
+            if (nat_port) results = results.filter(log => log.nat_port.includes(nat_port));
+
+            res.send(results);
         } catch (error) {
             console.error('Error processing advanced search:', error);
             res.status(500).send({ error: 'Internal server error' });
@@ -247,7 +256,7 @@ const setupExpress = () => {
             res.status(500).json({ error: 'Internal server error' });
         }
     });
-    
+
     // Search across all router logs
     app.get('/search', async (req, res) => {
         const { query } = req.query;
